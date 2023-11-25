@@ -1,5 +1,7 @@
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <vector>
+#include "enemy.hpp"
 
 //define window dimensions
 const int WINDOW_WIDTH = 800;
@@ -13,6 +15,26 @@ SDL_Event currentEvent;
 bool quit = false;
 
 int mouseX, mouseY;
+
+const int ENEMY_WIDTH = 50;
+const int ENEMY_HEIGHT = 50;
+std::vector<Enemy> enemies;
+
+void spawn_enemy(int h, int w, int x, int y) {
+    Enemy e;
+    e.rect.h = h;
+    e.rect.w = w;
+    e.position.x = x;
+    e.position.y = y;
+
+    enemies.push_back(e);
+}
+
+void spawn_row_of_enemies() {
+    for (int i = ENEMY_WIDTH; i < WINDOW_WIDTH; i += 100) {
+        spawn_enemy(ENEMY_HEIGHT, ENEMY_WIDTH, i, -ENEMY_HEIGHT);
+    }
+}
 
 bool initWindow() {
 
@@ -65,6 +87,17 @@ bool initWindow() {
     return success;
 }
 
+void processMovement() {
+    for (auto &enemy : enemies) {
+        // glm::vec2 pos = glm::vec2(enemy.rect.x, enemy.rect.y);
+        enemy.position += enemy.direction * enemy.speed;
+        enemy.rect.x = enemy.position.x - enemy.rect.w / 2;
+        enemy.rect.y = enemy.position.y - enemy.rect.h / 2;
+        //std::cout << "pos: " << enemy.direction.x * enemy.speed << std::endl;
+        // pos += enemy.direction * enemy.speed;
+    }
+}
+
 void processEvents() {
 
     //Check for events in queue
@@ -102,6 +135,8 @@ void processEvents() {
         switch (currentEvent.key.keysym.sym) {
 
         case SDLK_UP:
+            spawn_row_of_enemies();
+            std::cout << "Spawned." << std::endl;
             break;
 
         case SDLK_DOWN:
@@ -137,7 +172,10 @@ void drawFrame() {
     SDL_RenderClear(windowRenderer);
 
     //Draw scene
-    //TODO
+    SDL_SetRenderDrawColor(windowRenderer, 255, 0, 0, 255);
+    for (auto enemy : enemies) {
+        SDL_RenderFillRect(windowRenderer, &enemy.rect);
+    }
 
     //Update window
     SDL_RenderPresent(windowRenderer);
@@ -172,9 +210,11 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+
+
     //Game loop
     while (!quit) {
-
+        processMovement();
         processEvents();
         drawFrame();
     }
